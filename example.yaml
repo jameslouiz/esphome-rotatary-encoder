@@ -1,0 +1,32 @@
+esphome:
+  name: bedroom_entrance_wroom
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+external_components:
+  - source:
+      type: local
+      path: components
+    components: [RotaryEncoder]
+
+i2c:
+  id: bus_a
+  frequency: 100
+
+RotaryEncoder:
+  id: encoder
+  i2c_id: bus_a
+  address: 0x36
+  button:
+    name: Rotary Button
+    id: rotary_button
+  encoder:
+    name: Rotary Encoder
+    id: rotary
+    encoder_filter: 2

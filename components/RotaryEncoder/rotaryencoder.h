@@ -1,0 +1,76 @@
+#pragma once
+
+#include "esphome/components/binary_sensor/binary_sensor.h"
+#include "esphome/components/i2c/i2c.h"
+#include "esphome/components/sensor/sensor.h"
+#include "esphome/core/automation.h"
+#include "esphome/core/component.h"
+#include "esphome/core/hal.h"
+
+namespace esphome
+{
+  namespace rotaryencoder
+  {
+
+    class RotaryEncoder : public i2c::I2CDevice, public Component
+    {
+    public:
+      void setup() override;
+      void loop() override;
+
+      float get_setup_priority() const override;
+
+      void readButton();
+      void readEncoder();
+
+      void setupPin(uint8_t buf)
+      {
+        uint8_t cmd[6];
+        u_int32_t pins = 1 << 24;
+
+        cmd[0] = GPIO_BASE;
+        cmd[1] = buf;
+        cmd[2] = (pins >> 24) & 0xFF; // Most significant byte
+        cmd[3] = (pins >> 16) & 0xFF;
+        cmd[4] = (pins >> 8) & 0xFF;
+        cmd[5] = pins & 0xFF;
+
+        this->write(cmd, 6);
+      }
+
+      void setupButton()
+      {
+        setupPin(GPIO_DIRCLR_BULK);
+        setupPin(GPIO_PULLENSET);
+        setupPin(GPIO_BULK_SET);
+      }
+
+      void set_encoder(sensor::Sensor *encoder) { this->encoder_value_ = encoder; }
+
+      void set_button(binary_sensor::BinarySensor *button)
+      {
+        this->button_ = button;
+      }
+
+    protected:
+      uint8_t number_{0};
+      int32_t value_{0};
+      int encoder_filter_ = 1;
+      int32_t min_value_{INT32_MIN};
+      int32_t max_value_{INT32_MAX};
+      long long lastUpdated = 8;
+      static const uint8_t GPIO_BASE = 0x01;
+      static const uint8_t GPIO_DIRCLR_BULK = 0x03;
+      static const uint8_t GPIO_PULLENSET = 0x0B;
+      static const uint8_t GPIO_BULK_SET = 0x05;
+      static const uint8_t ENCODER_BASE = 0x11;
+
+      sensor::Sensor *encoder_value_{nullptr};
+      sensor::Sensor *increment_value_{nullptr};
+      binary_sensor::BinarySensor *button_{nullptr};
+
+      void setEncoderValue(int32_t value);
+    };
+
+  } // namespace rotaryencoder
+} // namespace esphome
