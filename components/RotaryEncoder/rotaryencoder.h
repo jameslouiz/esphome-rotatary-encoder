@@ -23,20 +23,7 @@ namespace esphome
       void readButton();
       void readEncoder();
 
-      void setupPin(uint8_t buf)
-      {
-        uint8_t cmd[6];
-        u_int32_t pins = 1 << 24;
-
-        cmd[0] = GPIO_BASE;
-        cmd[1] = buf;
-        cmd[2] = (pins >> 24) & 0xFF; // Most significant byte
-        cmd[3] = (pins >> 16) & 0xFF;
-        cmd[4] = (pins >> 8) & 0xFF;
-        cmd[5] = pins & 0xFF;
-
-        this->write(cmd, 6);
-      }
+      void setupPin(uint8_t buf);
 
       void setupButton()
       {
@@ -52,6 +39,16 @@ namespace esphome
         this->button_ = button;
       }
 
+      void add_on_clockwise_callback(std::function<void()> callback)
+      {
+        this->on_clockwise_callback_.add(std::move(callback));
+      }
+
+      void add_on_anticlockwise_callback(std::function<void()> callback)
+      {
+        this->on_anticlockwise_callback_.add(std::move(callback));
+      }
+
     protected:
       uint8_t number_{0};
       int32_t value_{0};
@@ -64,12 +61,34 @@ namespace esphome
       static const uint8_t GPIO_PULLENSET = 0x0B;
       static const uint8_t GPIO_BULK_SET = 0x05;
       static const uint8_t ENCODER_BASE = 0x11;
+      CallbackManager<void()> on_clockwise_callback_;
+      CallbackManager<void()> on_anticlockwise_callback_;
 
       sensor::Sensor *encoder_value_{nullptr};
       sensor::Sensor *increment_value_{nullptr};
       binary_sensor::BinarySensor *button_{nullptr};
 
       void setEncoderValue(int32_t value);
+    };
+
+    class RotaryEncoderClockwiseTrigger : public Trigger<>
+    {
+    public:
+      explicit RotaryEncoderClockwiseTrigger(RotaryEncoder *parent)
+      {
+        parent->add_on_clockwise_callback([this]()
+                                          { this->trigger(); });
+      }
+    };
+
+    class RotaryEncoderAntiClockwiseTrigger : public Trigger<>
+    {
+    public:
+      explicit RotaryEncoderAntiClockwiseTrigger(RotaryEncoder *parent)
+      {
+        parent->add_on_anticlockwise_callback([this]()
+                                              { this->trigger(); });
+      }
     };
 
   } // namespace rotaryencoder

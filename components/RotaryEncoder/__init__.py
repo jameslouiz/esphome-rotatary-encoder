@@ -18,7 +18,6 @@ RotaryEncoder = RotaryEncoder_ns.class_(
     'RotaryEncoder', i2c.I2CDevice, cg.Component)
 CONF_ON_CLOCKWISE = "on_clockwise"
 CONF_ON_ANTICLOCKWISE = "on_anticlockwise"
-CONF_ENCODER_FILTER = "encoder_filter"
 CONF_BUTTON = "button"
 CONF_ENCODER = "encoder"
 
@@ -26,7 +25,7 @@ RotaryEncoderClockwiseTrigger = RotaryEncoder_ns.class_(
     "RotaryEncoderClockwiseTrigger", automation.Trigger
 )
 RotaryEncoderAnticlockwiseTrigger = RotaryEncoder_ns.class_(
-    "RotaryEncoderAnticlockwiseTrigger", automation.Trigger
+    "RotaryEncoderAntiClockwiseTrigger", automation.Trigger
 )
 
 ENCODER_SCHEMA = cv.Schema(
@@ -45,7 +44,6 @@ ENCODER_SCHEMA = cv.Schema(
                 ),
             }
         ),
-        cv.Optional(CONF_ENCODER_FILTER, default=1): cv.int_range(min=1, max=100),
     }
 ).extend(sensor.sensor_schema())
 
@@ -68,9 +66,6 @@ async def to_code(config):
         cg.add(var.set_encoder(sens))
 
         encoderConfig = config[CONF_ENCODER]
-
-        # if CONF_ENCODER_FILTER in encoderConfig:
-        #     cg.add(var.set_encoder_filter(encoderConfig[CONF_ENCODER_FILTER]))
 
         for conf in encoderConfig.get(CONF_ON_CLOCKWISE, []):
             trigger = cg.new_Pvariable(conf[CONF_TRIGGER_ID], var)

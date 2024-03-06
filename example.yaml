@@ -19,7 +19,7 @@ i2c:
   id: bus_a
   frequency: 100
 
-RotaryEncoder:
+rotary_encoder:
   id: encoder
   i2c_id: bus_a
   address: 0x36
@@ -28,5 +28,4 @@ RotaryEncoder:
     id: rotary_button
   encoder:
     name: Rotary Encoder
-    id: rotary
-    encoder_filter: 2
+    id: rotary_encoder

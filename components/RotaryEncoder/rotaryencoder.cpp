@@ -9,6 +9,14 @@ namespace esphome
 
     static const char *const TAG = "ENCODER";
 
+    static uint8_t clamp(uint8_t a)
+    {
+      if (a & (~0xFF))
+        return (-a) >> 31;
+      else
+        return a;
+    }
+
     float RotaryEncoder::get_setup_priority() const
     {
       return setup_priority::IO;
@@ -19,6 +27,21 @@ namespace esphome
       setupButton();
 
       LOG_I2C_DEVICE(this);
+    }
+
+    void RotaryEncoder::setupPin(uint8_t buf)
+    {
+      uint8_t cmd[6];
+      u_int32_t pins = 1 << 24;
+
+      cmd[0] = GPIO_BASE;
+      cmd[1] = buf;
+      cmd[2] = (pins >> 24) & 0xFF; // Most significant byte
+      cmd[3] = (pins >> 16) & 0xFF;
+      cmd[4] = (pins >> 8) & 0xFF;
+      cmd[5] = pins & 0xFF;
+
+      this->write(cmd, 6);
     }
 
     void RotaryEncoder::setEncoderValue(int32_t value)
@@ -69,8 +92,6 @@ namespace esphome
       this->write(buffer, 2);
       uint8_t read_buffer[4];
 
-      delay(8);
-
       this->read(read_buffer, 4);
 
       int32_t value = (read_buffer[0] << 24) |
@@ -82,17 +103,17 @@ namespace esphome
       {
         if (value_ != value)
         {
-          // this->encoder_value_->publish_state(value);
-
           if (value_ > value)
           {
             ESP_LOGI(TAG, "ROTATING CLOCKWISE");
             this->encoder_value_->publish_state(++number_);
+            this->on_clockwise_callback_.call();
           }
           else
           {
             ESP_LOGI(TAG, "ROTATING ANTI-CLOCKWISE");
             this->encoder_value_->publish_state(--number_);
+            this->on_anticlockwise_callback_.call();
           }
 
           value_ = value;
